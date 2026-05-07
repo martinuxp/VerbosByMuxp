@@ -1,17 +1,17 @@
-# 🎓 Verbos By Muxp
+# Verbos By Muxp
 
 
-Bienvenido a **Verbos by Muxp**, la herramienta definitiva para dominar las conjugaciones de verbos en inglés.
+**Verbos by Muxp**, una herramienta para dominar conjugaciones de verbos en inglés.
 
 ---
 
-## 🚀 Funcionalidades
+## 🐀 Funciones
 
 - **Selección de Verbos Personalizada**: Elige verbos por categoría: Regulares, Irregulares o Combinados. Selecciona verbos específicos o elige un conjunto aleatorio de 20 para una sesión rápida.
 - **Formatos de Quiz Configurables**: Practica exactamente lo que necesitas. Enfócate en las formas de Infinitivo, Pasado Simple o Participio Pasado.
 - **Interfaz de Quiz Interactiva**: Diseños limpios y tabulares con traducciones al español proporcionadas como pistas útiles.
 - **Retroalimentación y Aprendizaje Inmediato**: Visualiza las respuestas correctas junto a las entradas incorrectas para reforzar el aprendizaje.
-- **Diseño Premium**: Construido con los principios de **Material 3**, con sombras suaves, animaciones fluidas (Framer Motion), fondos (bgs) con musho aura de **ReactBites** y una paleta de colores bien *kiut*.
+- **Enfocado en el diseño**: Construido con los principios de **Material 3** (aunq no se parezca en nada ahora cofcof), con sombras suaves, animaciones fluidas (Framer Motion), fondos (bgs) con musho aura de **ReactBites** y una paleta de colores bien *kiut*.
 
 ---
 
@@ -27,7 +27,7 @@ Bienvenido a **Verbos by Muxp**, la herramienta definitiva para dominar las conj
 
 ---
 
-## 📦 Primeros Pasos
+## 📦 Host manual
 
 ### Requisitos Previos
 
@@ -42,7 +42,7 @@ Bienvenido a **Verbos by Muxp**, la herramienta definitiva para dominar las conj
     ```
 
 2.  **Configuración del Entorno**:
-    Asegúrate de que tu archivo `.env.local` esté configurado con tus variables de entorno para Supabase y Firebase.
+    Asegúrate de que tu archivo `.env.local` esté configurado con tus variables de entorno para Supabase y Firebase o cambialo por lo q te guste más w
 
 3.  **Ejecutar la App**:
     ```bash
@@ -55,7 +55,7 @@ Bienvenido a **Verbos by Muxp**, la herramienta definitiva para dominar las conj
 
 ## 🚀 Despliegue
 
-Este proyecto está optimizado para **Firebase App Hosting**.
+Este proyecto está optimizado para **Firebase App Hosting**, porq? porq si.
 
 Para desplegar la aplicación:
 ```bash
@@ -63,7 +63,7 @@ firebase deploy
 ```
 
 > [!IMPORTANT]
-> Asegúrate de que tu `firebase.json` tenga una configuración de `apphosting` válida antes de realizar el despliegue.
+> Asegúrate de que tu `firebase.json` tenga una configuración de `apphosting` válida antes de realizar el despliegue, o poco t va a funcionar.
 
 ---
 
@@ -77,5 +77,5 @@ firebase deploy
 
 ## ✨ Desarrollado con Antigravity
 
-Este proyecto fue migrado y mejorado utilizando **Antigravity**, IDE de IA de Google.
+Este proyecto fue migrado y mejorado utilizando **Antigravity**, IDE de IA de Google. (este proyecto es en gran parte VideCoding pero sabiendo q hacer ok, si no soy tan tonto)
 
