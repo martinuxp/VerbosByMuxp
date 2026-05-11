@@ -14,6 +14,7 @@ import { QuizCountdown } from '@/components/quiz-countdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Balatro from '@/components/Balatro';
 import LightRays from '@/components/LightRays';
+import packageJson from '../../package.json';
 
 // ========== CONFIGURACIÓN DE COLORES (HEX) ==========
 // Cambia libremente estos códigos HEX. El sistema los convertirá automáticamente.
@@ -232,8 +233,15 @@ export default function Home() {
                 </TabsContent>
               </Tabs>
 
-              <footer className="text-center text-on-surface-variant text-sm border-t border-border pt-8 opacity-50">
-                <p>Hecho por Muxp bajo Apache 2.0 (v3.0.1)</p>
+              <footer className="text-center text-on-surface-variant text-sm border-t border-border pt-8 opacity-50 hover:opacity-100 transition-opacity">
+                <a
+                  href="https://github.com/martinuxp/VerbosByMuxp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  Hecho por Muxp bajo Apache 2.0 (v{packageJson.version})
+                </a>
               </footer>
             </div>
           </motion.main>

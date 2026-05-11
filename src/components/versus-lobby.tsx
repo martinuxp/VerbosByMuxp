@@ -2,11 +2,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Swords, Users, Plus, UserPlus, ArrowRight, Loader2 } from 'lucide-react';
+import { Swords, Users, Plus, UserPlus, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { verbLists } from '@/lib/verb-lists';
 import { createMatch, joinMatch } from '@/services/versus';
 import { useToast } from '@/hooks/use-toast';
@@ -65,23 +66,32 @@ export function VersusLobby({ onStartMatch }: VersusLobbyProps) {
 
   if (view === 'main') {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4">
-        <Button 
-          variant="outline" 
-          className="h-48 flex flex-col gap-4 text-xl font-bold border-2 border-primary/20 bg-surface-container hover:bg-primary/10 transition-all"
-          onClick={() => { playSelectSound(); setView('create'); }}
-        >
-          <Plus size={48} className="text-primary" />
-          Crear Sala
-        </Button>
-        <Button 
-          variant="outline" 
-          className="h-48 flex flex-col gap-4 text-xl font-bold border-2 border-secondary/20 bg-surface-container hover:bg-secondary/10 transition-all"
-          onClick={() => { playSelectSound(); setView('join'); }}
-        >
-          <UserPlus size={48} className="text-secondary" />
-          Unirse a Sala
-        </Button>
+      <div className="flex flex-col gap-6 p-4">
+        <Alert className="bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400">
+          <AlertCircle className="h-4 w-4 stroke-current" />
+          <AlertTitle className="font-bold">Aviso sobre los duelos</AlertTitle>
+          <AlertDescription>
+            Debido a las restricciones de SupaBase para mantener el servidor de duelos activo, la sección de duelo a veces puede no funcionar correctamente.
+          </AlertDescription>
+        </Alert>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <Button
+            variant="outline"
+            className="h-48 flex flex-col gap-4 text-xl font-bold border-2 border-primary/20 bg-surface-container hover:bg-primary/10 transition-all"
+            onClick={() => { playSelectSound(); setView('create'); }}
+          >
+            <Plus size={48} className="text-primary" />
+            Crear Sala
+          </Button>
+          <Button
+            variant="outline"
+            className="h-48 flex flex-col gap-4 text-xl font-bold border-2 border-secondary/20 bg-surface-container hover:bg-secondary/10 transition-all"
+            onClick={() => { playSelectSound(); setView('join'); }}
+          >
+            <UserPlus size={48} className="text-secondary" />
+            Unirse a Sala
+          </Button>
+        </div>
       </div>
     );
   }
@@ -90,7 +100,7 @@ export function VersusLobby({ onStartMatch }: VersusLobbyProps) {
     <Card className="max-w-xl mx-auto border-0 bg-surface-container-low shadow-2xl">
       <CardHeader>
         <div className="flex items-center gap-2 text-primary mb-2">
-           <Button variant="ghost" size="sm" onClick={() => setView('main')}>← Volver</Button>
+          <Button variant="ghost" size="sm" onClick={() => setView('main')}>← Volver</Button>
         </div>
         <CardTitle className="text-3xl font-black flex items-center gap-2">
           {view === 'create' ? 'Nueva Batalla' : 'Entrar a Combate'}
@@ -103,9 +113,9 @@ export function VersusLobby({ onStartMatch }: VersusLobbyProps) {
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label className="font-bold">Tu nombre de batalla</Label>
-          <Input 
-            placeholder="Ej: VerboMaster" 
-            value={playerName} 
+          <Input
+            placeholder="Ej: VerboMaster"
+            value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             className="h-12 text-lg bg-surface-container border-0"
             maxLength={12}
@@ -137,16 +147,16 @@ export function VersusLobby({ onStartMatch }: VersusLobbyProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="font-bold">Código de Sala</Label>
-              <Input 
-                placeholder="ABCDEF" 
-                value={roomCode} 
+              <Input
+                placeholder="ABCDEF"
+                value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 className="h-14 text-center text-3xl font-black tracking-widest bg-surface-container border-0"
                 maxLength={6}
               />
             </div>
-            <Button 
-              className="w-full h-14 text-lg font-bold" 
+            <Button
+              className="w-full h-14 text-lg font-bold"
               onClick={handleJoin}
               disabled={loading || !roomCode}
             >

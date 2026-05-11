@@ -72,5 +72,17 @@ export const verbLists: VerbList[] = [
       'enjoy', 'expect', 'explain', 'finish', 'follow', 'happen', 'help', 'hope',
       'imagine', 'include', 'introduce', 'invite'
     ]
+  },
+  {
+    name: "Quiz 3 | 2°K | 41-60",
+    description: "Lista de 40 verbos regulares e irregulares para el Quiz 3. Hecha para el nuevo modo DUELO.",
+    verbs: [
+      // Irregulares
+      "read", "ride", "ring", "run", "say", "see", "sell", "send", "sit", "sleep", "speak", "spend", "stand", "swim", "take",
+      "teach", "tell", "think", "throw", "understand",
+      // Regulares
+      "join", "learn", "like", "listen", "live", "look", "love", "manage", "mention",
+      "move", "need", "notice", "offer", "open", "organize", "paint", "plan", "prepare", "promise", "protect"
+    ]
   }
 ];
