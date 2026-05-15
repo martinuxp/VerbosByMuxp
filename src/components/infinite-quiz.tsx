@@ -303,7 +303,7 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
         <div 
           className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-1000"
           style={{
-            opacity: (gamePhase === 'playing' || gamePhase === 'results' || gamePhase === 'countdown') ? 0.4 : 0,
+            opacity: (gamePhase === 'playing' || gamePhase === 'game-over' || gamePhase === 'countdown' || gamePhase === 'how-to-play') ? 0.4 : 0,
           }}
         >
           <MemoizedFaultyTerminal 
@@ -318,13 +318,13 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
             curvature={0.15}
             brightness={displayTime <= 5 ? 1.3 : 1}
             tint={displayTime <= 8 ? "#EF4444" : "#dc143c"}
-            dpr={0.25}
+            dpr={0.5}
           />
         </div>
-      )}
+      )/* [BUGFIX] changed 'results' to 'game-over' and added 'how-to-play' for smoother transition. Increased dpr to 0.5. */}
 
       {(gamePhase === 'how-to-play' || gamePhase === 'countdown') && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background overflow-hidden">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-transparent overflow-hidden">
           {!disableEffects && (
             <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
               <ShapeGrid 

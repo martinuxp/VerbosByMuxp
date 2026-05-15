@@ -195,6 +195,7 @@ function ChallengeMode({ config, answers, onInputChange, onCheckAnswers }: { con
   const [currentIndex, setCurrentIndex] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const currentVerb = config.verbs[currentIndex];
+  const { disableEffects } = useSettings();
 
   const bgControls = useAnimation();
 
