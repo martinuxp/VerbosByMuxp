@@ -1,5 +1,7 @@
 'use client';
 
+import { globalMusicEnabled, globalSfxEnabled } from '@/hooks/use-audio-settings';
+
 const audioPools = new Map<string, HTMLAudioElement[]>();
 
 const getAudioInstance = (src: string): HTMLAudioElement => {
@@ -40,7 +42,7 @@ export const preloadInfiniteModeSounds = () => {
 };
 
 const playSound = (src: string, volume: number = 0.5) => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && globalSfxEnabled) {
     try {
       const audio = getAudioInstance(src);
       audio.volume = volume;
@@ -89,7 +91,7 @@ export const playLosingSound = () => playSound('/sounds/TeQuedasAtras.wav', 0.8)
 export const playWinningSound = () => playSound('/sounds/VasGanando.wav', 0.8);
 
 export const playWaitingLoopingSound = (onTick?: (sec: number) => void) => {
-  if (typeof window === 'undefined') return () => { };
+  if (typeof window === 'undefined' || !globalSfxEnabled) return () => { };
   try {
     const audio = getAudioInstance('/sounds/EsperandoOponente.wav');
     audio.volume = 0.4;
@@ -117,7 +119,7 @@ export const playWaitingLoopingSound = (onTick?: (sec: number) => void) => {
 };
 
 export const playDuelBackgroundMusic = () => {
-  if (typeof window === 'undefined') return () => { };
+  if (typeof window === 'undefined' || !globalMusicEnabled) return () => { };
   const tracks = ['/sounds/02DUELO.mp3', '/sounds/04DUELO.mp3', '/sounds/09DUELO.mp3', '/sounds/011DUELO.mp3'];
   const pTrack = tracks[Math.floor(Math.random() * tracks.length)];
   try {
@@ -142,7 +144,7 @@ export const playDuelBackgroundMusic = () => {
 };
 
 export const playSoloBackgroundMusic = () => {
-  if (typeof window === 'undefined') return () => { };
+  if (typeof window === 'undefined' || !globalMusicEnabled) return () => { };
   try {
     const audio = getAudioInstance('/sounds/01SOLO.mp3');
     audio.volume = 0.25;
@@ -167,7 +169,7 @@ export const playSoloBackgroundMusic = () => {
 export const playGameOverInfinitoSound = () => playSound('/sounds/gameover-infinito.wav', 0.8);
 
 export const playInfiniteBgMusic01_05 = () => {
-  if (typeof window === 'undefined') return () => { };
+  if (typeof window === 'undefined' || !globalMusicEnabled) return () => { };
   try {
     const audio = getAudioInstance('/sounds/infinito01-05.mp3');
     audio.volume = 0.25;
@@ -190,7 +192,7 @@ export const playInfiniteBgMusic01_05 = () => {
 };
 
 export const playInfiniteBgMusic06_xx = () => {
-  if (typeof window === 'undefined') return () => { };
+  if (typeof window === 'undefined' || !globalMusicEnabled) return () => { };
   try {
     const audio = getAudioInstance('/sounds/infinito06-xx.mp3');
     audio.volume = 0.25;

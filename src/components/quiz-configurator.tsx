@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Dices, BookOpenCheck, Settings2, Search, ListChecks, HelpCircle } from 'lucide-react';
 import { verbs, type Verb } from '@/lib/verbs';
 import { verbLists, type VerbList } from '@/lib/verb-lists';
@@ -27,6 +27,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { playSelectSound, playStartSound, playChallengeModeSound, playReviewModeSound, playConfirmSound } from '@/lib/sounds';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 
 export type VerbForm = 'infinitive' | 'pastSimple' | 'pastParticiple';
@@ -47,7 +55,20 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
   const [searchTerm, setSearchTerm] = useState('');
   const [isRandomSelection, setIsRandomSelection] = useState(false);
   const [activeList, setActiveList] = useState<string | null>(null);
+  const [activeListData, setActiveListData] = useState<VerbList | null>(null);
+  const [listTypeFilter, setListTypeFilter] = useState<'all' | 'regular' | 'irregular'>('all');
   const [quizMode, setQuizMode] = useState<QuizMode>('challenge');
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+
+  useEffect(() => {
+    const hasSeen = localStorage.getItem('solo_htp_seen');
+    if (!hasSeen) setShowHowToPlay(true);
+  }, []);
+
+  const handleCloseHowToPlay = () => {
+    localStorage.setItem('solo_htp_seen', '1');
+    setShowHowToPlay(false);
+  };
 
   const displayVerbs = useMemo(() => {
     let filtered = verbs;
@@ -118,16 +139,34 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
     }
   };
 
+  const applyListWithFilter = useCallback((list: VerbList, typeFilter: 'all' | 'regular' | 'irregular') => {
+    const verbSet = new Set(list.verbs);
+    const filtered = verbs
+      .filter(v => verbSet.has(v.infinitive))
+      .filter(v => typeFilter === 'all' || v.type === typeFilter);
+    setSelectedVerbs(new Set(filtered.map(v => v.infinitive)));
+  }, []);
+
   const handleSelectList = (list: VerbList) => {
     playSelectSound();
     if (activeList === list.name) {
       setSelectedVerbs(new Set());
       setActiveList(null);
+      setActiveListData(null);
+      setListTypeFilter('all');
     } else {
-      setSelectedVerbs(new Set(list.verbs));
       setActiveList(list.name);
+      setActiveListData(list);
       setIsRandomSelection(false);
+      setListTypeFilter('all');
+      applyListWithFilter(list, 'all');
     }
+  };
+
+  const handleListTypeFilter = (type: 'all' | 'regular' | 'irregular') => {
+    playSelectSound();
+    setListTypeFilter(type);
+    if (activeListData) applyListWithFilter(activeListData, type);
   };
   
   const handleCategoryChange = (value: string) => {
@@ -136,6 +175,8 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
     setSelectedVerbs(new Set());
     setIsRandomSelection(false);
     setActiveList(null);
+    setActiveListData(null);
+    setListTypeFilter('all');
   };
 
   const handleStart = () => {
@@ -167,13 +208,125 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
   return (
     <TooltipProvider>
       <CardHeader className="p-6">
-        <CardTitle className="font-headline text-3xl flex items-center gap-2 font-bold">
-          <Settings2 className="w-7 h-7" />
-          Crea tu Quiz
-        </CardTitle>
-        <CardDescription>
-          Personaliza tu sesión de práctica. Elige un modo, una lista rápida o selecciona manualmente los verbos.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <CardTitle className="font-headline text-3xl flex items-center gap-2 font-bold">
+              <Settings2 className="w-7 h-7" />
+              Crea tu Quiz
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Personaliza tu sesión de práctica. Elige un modo, una lista rápida o selecciona manualmente los verbos.
+            </CardDescription>
+          </div>
+          <Dialog open={showHowToPlay} onOpenChange={(open) => { if (!open) handleCloseHowToPlay(); else setShowHowToPlay(true); }}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 flex-shrink-0 bg-surface-container hover:bg-accent border border-border/50 mt-1">
+                <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                <span className="sr-only">Cómo jugar</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-headline font-black tracking-tight flex items-center gap-2">
+                  🎮 Cómo jugar — Solitario
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-5 pt-2">
+
+                {/* Modes */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Modos de Juego</p>
+                  <div className="space-y-2">
+                    <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">⚔️</span>
+                        <span className="font-black text-primary">Desafío</span>
+                        <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">Recomendado</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-snug">
+                        Los verbos aparecen uno por uno. Escribe la forma pedida y presiona <kbd className="px-1.5 py-0.5 rounded bg-surface-container text-xs font-mono border">Enter</kbd> para confirmar. Puedes navegar entre verbos con los botones de flecha.
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-surface-container border border-border">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">📋</span>
+                        <span className="font-black">Repaso (lista)</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-snug">
+                        Todos los verbos aparecen en una tabla. Rellena las celdas a tu ritmo y confirma todo al final. Ideal para estudiar sin presión.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verb forms */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Formas Verbales</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { label: 'Infinitivo', example: 'go', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+                      { label: 'Pasado Simple', example: 'went', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                      { label: 'Pasado Participio', example: 'gone', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                    ]).map(({ label, example, color, bg }) => (
+                      <div key={label} className={`p-3 rounded-xl border text-center ${bg}`}>
+                        <p className={`text-base font-black font-mono ${color}`}>{example}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Puedes elegir practicar una, dos o las tres formas. Los verbos con múltiples formas aceptadas (p. ej. <span className="font-mono text-primary">learned/learnt</span>) son válidas por igual.
+                  </p>
+                </div>
+
+                {/* Scoring */}
+                <div className="space-y-3">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Puntuación</p>
+                  <div className="p-4 rounded-xl bg-surface-container border border-border space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm flex items-center gap-2">✅ Respuesta correcta</span>
+                      <span className="font-black text-emerald-400">+100 pts</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm flex items-center gap-2">⚡ Bonus por velocidad</span>
+                      <span className="font-black text-amber-400">hasta +5000 pts</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm flex items-center gap-2">🏆 Bonus perfecto</span>
+                      <span className="font-black text-primary">solo con 100% acierto</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground border-t border-border pt-2 mt-1">
+                      La puntuación se sube automáticamente al ranking global al terminar el quiz.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tips */}
+                <div className="space-y-2">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Consejos</p>
+                  <ul className="space-y-1.5">
+                    {[
+                      '💡 Las listas prehechas son una gran forma de empezar si no sabes qué verbos elegir.',
+                      '🎲 Usa los 20 al azar para sesiones rápidas y variadas.',
+                      '⌨️ En Desafío, usa Enter para confirmar y las flechas para navegar.',
+                      '🔁 Practica los verbos incorrectos con la opción de repetir al final.',
+                    ].map((tip) => (
+                      <li key={tip} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="flex-shrink-0">{tip.slice(0, 2)}</span>
+                        <span>{tip.slice(3)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <Button onClick={handleCloseHowToPlay} className="w-full h-11 font-black rounded-xl">
+                  ¡Entendido, a jugar!
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="p-6 pt-0 space-y-6">
 
@@ -224,6 +377,32 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
                 </button>
               ))}
             </div>
+
+            {/* List type filter — only shown when a premade list is active */}
+            {activeList && activeList !== 'random' && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-xs text-muted-foreground font-semibold shrink-0">Tipo:</span>
+                {([
+                  { value: 'all', label: 'Ambos' },
+                  { value: 'regular', label: 'Regulares' },
+                  { value: 'irregular', label: 'Irregulares' },
+                ] as const).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleListTypeFilter(value)}
+                    className={cn(
+                      'px-3 py-1 rounded-full text-xs font-bold border transition-all',
+                      listTypeFilter === value
+                        ? 'bg-primary text-primary-foreground border-transparent shadow'
+                        : 'bg-surface-container border-border hover:bg-accent'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+                <span className="text-xs text-muted-foreground ml-auto">{selectedVerbs.size} verbos</span>
+              </div>
+            )}
           </div>
           
           <Separator orientation='horizontal' className='my-4' />

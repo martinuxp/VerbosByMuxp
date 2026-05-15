@@ -19,6 +19,8 @@ import LightRays from '@/components/LightRays';
 import { type Verb } from '@/lib/verbs';
 import packageJson from '../../package.json';
 import ShapeGrid from '@/components/shape-grid';
+import { GlobalSettings } from '@/components/global-settings';
+import { useSettings } from '@/hooks/use-settings';
 
 // ========== CONFIGURACIÓN DE COLORES (HEX) ==========
 // Cambia libremente estos códigos HEX. El sistema los convertirá automáticamente.
@@ -68,6 +70,7 @@ export default function Home() {
   const [versusMatch, setVersusMatch] = useState<{ roomCode: string, playerId: string } | null>(null);
   const [infiniteVerbs, setInfiniteVerbs] = useState<Verb[]>([]);
   const [activeTab, setActiveTab] = useState('play');
+  const { disableEffects } = useSettings();
 
   const handleQuizStart = (config: QuizConfig) => {
     setQuizConfig(config);
@@ -129,7 +132,7 @@ export default function Home() {
       case 'configuring':
       default:
         let tabInfo = {
-          badge: "¡V3 LLEGA CON DUELOS Y EL RANK GLOBAL!",
+          badge: "¡V4 con modo infinito y nuevas funciones!",
           badgeIcon: <Zap size={14} />,
           title: "Solitario",
           titleIcon: <Sparkles className="w-12 h-12" />,
@@ -164,67 +167,74 @@ export default function Home() {
 
         return (
           <motion.main key="config" initial={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-12 text-on-surface bg-background relative overflow-hidden">
-            <motion.div
-              className="absolute inset-0 pointer-events-none z-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: activeTab === 'versus' ? 0.4 : 0 }}
-              transition={{ duration: 1, ease: 'easeInOut' }}
-            >
-              <div style={{ width: '150vw', height: '150vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
-                <Balatro
-                  spinRotation={-2}
-                  spinSpeed={7}
-                  color1="#800040"
-                  color2="#d5006a"
-                  color3="#162325"
-                  contrast={3.5}
-                  lighting={0.4}
-                  spinAmount={0.25}
-                  pixelFilter={1200}
-                />
-              </div>
-            </motion.div>
-            <motion.div
-              className="absolute inset-0 pointer-events-none z-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: activeTab === 'infinite' ? 0.4 : 0 }}
-              transition={{ duration: 1, ease: 'easeInOut' }}
-            >
-              <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
-                <ShapeGrid 
-                  shape="triangle"
-                  direction="diagonal"
-                  speed={0.4}
-                  squareSize={50}
-                  borderColor="rgba(255, 255, 255, 0.08)"
-                  hoverFillColor="rgba(255, 255, 255, 0.03)"
-                  hoverTrailAmount={4}
-                />
-              </div>
-            </motion.div>
-            <motion.div
-              className="absolute inset-0 pointer-events-none z-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: activeTab === 'ranking' ? 0.6 : 0 }}
-              transition={{ duration: 1, ease: 'easeInOut' }}
-            >
-              <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
-                <LightRays
-                  raysOrigin="top-center"
-                  raysColor="#ffcc00"
-                  raysSpeed={0.9}
-                  lightSpread={1}
-                  rayLength={1.6}
-                  pulsating={false}
-                  fadeDistance={1}
-                  saturation={1}
-                  followMouse
-                  mouseInfluence={0.1}
-                  noiseAmount={0}
-                  distortion={0.15}
-                />
-              </div>
-            </motion.div>
+            <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50">
+              <GlobalSettings />
+            </div>
+            {!disableEffects && (
+              <>
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: activeTab === 'versus' ? 0.4 : 0 }}
+                  transition={{ duration: 1, ease: 'easeInOut' }}
+                >
+                  <div style={{ width: '150vw', height: '150vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
+                    <Balatro
+                      spinRotation={-2}
+                      spinSpeed={7}
+                      color1="#800040"
+                      color2="#d5006a"
+                      color3="#162325"
+                      contrast={3.5}
+                      lighting={0.4}
+                      spinAmount={0.25}
+                      pixelFilter={1200}
+                    />
+                  </div>
+                </motion.div>
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: activeTab === 'infinite' ? 0.4 : 0 }}
+                  transition={{ duration: 1, ease: 'easeInOut' }}
+                >
+                  <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+                    <ShapeGrid
+                      shape="triangle"
+                      direction="diagonal"
+                      speed={0.4}
+                      squareSize={50}
+                      borderColor="rgba(255, 255, 255, 0.08)"
+                      hoverFillColor="rgba(255, 255, 255, 0.03)"
+                      hoverTrailAmount={4}
+                    />
+                  </div>
+                </motion.div>
+                <motion.div
+                  className="absolute inset-0 pointer-events-none z-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: activeTab === 'ranking' ? 0.6 : 0 }}
+                  transition={{ duration: 1, ease: 'easeInOut' }}
+                >
+                  <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+                    <LightRays
+                      raysOrigin="top-center"
+                      raysColor="#ffcc00"
+                      raysSpeed={0.9}
+                      lightSpread={1}
+                      rayLength={1.6}
+                      pulsating={false}
+                      fadeDistance={1}
+                      saturation={1}
+                      followMouse
+                      mouseInfluence={0.1}
+                      noiseAmount={0}
+                      distortion={0.15}
+                    />
+                  </div>
+                </motion.div>
+              </>
+            )}
             <div className="w-full max-w-5xl space-y-12 relative z-10">
               <header className="text-center space-y-4">
                 <AnimatePresence mode="wait">

@@ -2,8 +2,18 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Timer, Zap, Target, RefreshCw } from 'lucide-react';
-import { Infinity as InfinityIcon } from 'lucide-react';
+import { ArrowLeft, Check, Timer, Zap, Trophy, Infinity as InfinityIcon, Play, HelpCircle, Volume2, Music, Settings, ZapOff } from 'lucide-react';
+import { useAudioSettings } from '@/hooks/use-audio-settings';
+import { useSettings } from '@/hooks/use-settings';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem
+} from '@/components/ui/dropdown-menu';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { type Verb } from '@/lib/verbs';
 import { type VerbForm } from '@/components/quiz-configurator';
 import { Button } from '@/components/ui/button';
@@ -20,11 +30,13 @@ import {
   playInfiniteBgMusic06_xx,
   playLosingSound,
   playSurrenderConfirmSound,
+  playConfirmSound,
   preloadInfiniteModeSounds
 } from '@/lib/sounds';
 import ShapeGrid from '@/components/shape-grid';
 import { useToast } from '@/hooks/use-toast';
 import FaultyTerminal from '@/components/FaultyTerminal';
+import { GlobalSettings } from './global-settings';
 
 const MemoizedFaultyTerminal = React.memo(FaultyTerminal);
 const INITIAL_TIME = 30;
@@ -70,20 +82,9 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [survivalTime, setSurvivalTime] = useState(0);
   const [countdown, setCountdown] = useState(3);
-  const [disableEffects, setDisableEffects] = useState(false);
+  const { disableEffects, setDisableEffects } = useSettings();
+  const { musicEnabled, sfxEnabled, setMusicEnabled, setSfxEnabled } = useAudioSettings();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const stored = localStorage.getItem('disableEffects');
-    if (stored) {
-      setDisableEffects(stored === 'true');
-    }
-  }, []);
-
-  const handleToggleEffects = (val: boolean) => {
-    setDisableEffects(val);
-    localStorage.setItem('disableEffects', val.toString());
-  };
 
   // Refs for values used inside intervals/callbacks
   const timeLeftRef = useRef(INITIAL_TIME);
@@ -112,11 +113,19 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
 
   useEffect(() => {
     if (gamePhase === 'playing') {
-      if (loop === 1 && !bgMusicCleanupRef.current) {
-         bgMusicCleanupRef.current = playInfiniteBgMusic01_05();
-      } else if (loop === 6) { 
-         if (bgMusicCleanupRef.current) bgMusicCleanupRef.current();
-         bgMusicCleanupRef.current = playInfiniteBgMusic06_xx();
+      // Re-evaluate music if setting changes or loop changes
+      if (musicEnabled) {
+        if (loop <= 5 && !bgMusicCleanupRef.current) {
+          bgMusicCleanupRef.current = playInfiniteBgMusic01_05();
+        } else if (loop >= 6) {
+          if (bgMusicCleanupRef.current) bgMusicCleanupRef.current();
+          bgMusicCleanupRef.current = playInfiniteBgMusic06_xx();
+        }
+      } else {
+        if (bgMusicCleanupRef.current) {
+          bgMusicCleanupRef.current();
+          bgMusicCleanupRef.current = undefined;
+        }
       }
     } else {
       if (bgMusicCleanupRef.current) {
@@ -124,7 +133,7 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
         bgMusicCleanupRef.current = undefined;
       }
     }
-  }, [gamePhase, loop]);
+  }, [gamePhase, loop, musicEnabled]);
 
   // Countdown Phase
   useEffect(() => {
@@ -289,36 +298,28 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
 
   return (
     <div className="flex flex-col h-screen bg-background text-on-surface overflow-hidden relative">
-      {!disableEffects && (
+      {/* Background Effects */}
+      {!disableEffects && terminalMounted && (
         <div 
-          className={cn(
-            "absolute inset-0 z-0",
-            gamePhase === 'playing' ? "opacity-50" : "opacity-0 pointer-events-none"
-          )}
+          className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-1000"
           style={{
-            filter: displayTime <= 8 ? 'hue-rotate(143deg)' : 'none',
-            transition: 'filter 0.5s ease-in-out, opacity 1s ease-in-out'
+            opacity: (gamePhase === 'playing' || gamePhase === 'results' || gamePhase === 'countdown') ? 0.4 : 0,
           }}
         >
-          {terminalMounted && (
-            <MemoizedFaultyTerminal
-              scale={1.2}
-              digitSize={1.2}
-              scanlineIntensity={0.5}
-              glitchAmount={0}
-              flickerAmount={0.5}
-              noiseAmp={0.8}
-              chromaticAberration={0}
-              dither={0}
-              curvature={0}
-              tint="#3B82F6"
-              mouseReact={false}
-              mouseStrength={0}
-              pageLoadAnimation={false}
-              brightness={0.6}
-              dpr={0.25}
-            />
-          )}
+          <MemoizedFaultyTerminal 
+            scale={2.5}
+            gridMul={[2, 1.5]}
+            digitSize={1.8}
+            timeScale={0.15}
+            scanlineIntensity={0.4}
+            glitchAmount={displayTime <= 8 ? 1.5 : 1}
+            flickerAmount={displayTime <= 5 ? 1.4 : 1.1}
+            noiseAmp={0.05}
+            curvature={0.15}
+            brightness={displayTime <= 5 ? 1.3 : 1}
+            tint={displayTime <= 8 ? "#EF4444" : "#dc143c"}
+            dpr={0.25}
+          />
         </div>
       )}
 
@@ -338,12 +339,16 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
           )}
           
           {gamePhase === 'how-to-play' && (
-            <div className="relative z-10 w-full h-full">
+            <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
               <HowToPlay 
-                onStart={startGame} 
+                onStart={startGame}
                 onExit={onExit}
                 disableEffects={disableEffects}
-                onToggleEffects={handleToggleEffects}
+                onDisableEffectsChange={setDisableEffects}
+                musicEnabled={musicEnabled}
+                onMusicEnabledChange={setMusicEnabled}
+                sfxEnabled={sfxEnabled}
+                onSfxEnabledChange={setSfxEnabled}
               />
             </div>
           )}
@@ -382,9 +387,52 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
         <>
           {/* ── Header / Timer ──────────────────────────────────────────────── */}
           <header className="flex-shrink-0 flex items-center gap-3 p-3 border-b border-border bg-background/60 backdrop-blur-md z-10 relative">
-            <Button variant="ghost" size="icon" onClick={onExit} className="w-9 h-9 flex-shrink-0">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <TooltipProvider>
+                <Button variant="ghost" size="icon" onClick={onExit} className="w-10 h-10 flex-shrink-0 bg-surface-container/50 hover:bg-surface-container border border-border/50 backdrop-blur-sm rounded-full transition-all">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </TooltipProvider>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-10 h-10 flex-shrink-0 bg-surface-container/50 hover:bg-surface-container border border-border/50 backdrop-blur-sm rounded-full transition-all group">
+                    <Settings className="h-5 w-5 group-hover:rotate-90 transition-transform duration-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 mt-2 bg-surface-container-high/95 backdrop-blur-md border-border shadow-2xl p-1 rounded-xl">
+                  <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    Ajustes de Juego
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <DropdownMenuCheckboxItem
+                    checked={musicEnabled}
+                    onCheckedChange={setMusicEnabled}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer"
+                  >
+                    <Music className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-bold">Música</span>
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={sfxEnabled}
+                    onCheckedChange={setSfxEnabled}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer"
+                  >
+                    <Volume2 className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-bold">Sonidos</span>
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <DropdownMenuCheckboxItem
+                    checked={!disableEffects}
+                    onCheckedChange={(v) => setDisableEffects(!v)}
+                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer"
+                  >
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-bold">Efectos Visuales</span>
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             {/* Time bar */}
             <div className="flex-1 space-y-1">
@@ -535,12 +583,14 @@ function InfiniteResults({
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-4 text-center overflow-auto"
     >
       <motion.div
-        initial={{ scale: 0.85, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-        className="w-full max-w-sm space-y-6"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="w-full max-w-sm space-y-6 relative"
       >
-        {/* Death cause */}
+        <div className="absolute -top-4 -right-4 z-20 scale-90">
+          <GlobalSettings />
+        </div>
+
         <div className="space-y-2">
           <div className={cn(
             'inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border',
@@ -554,48 +604,60 @@ function InfiniteResults({
         </div>
 
         {/* Stats */}
-        <Card className="bg-surface-container border-0 shadow-2xl">
-          <CardContent className="p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: <Timer size={16} className="text-primary" />, value: timeDisplay, label: 'Sobreviviste' },
-                { icon: <InfinityIcon size={16} className="text-primary" />, value: loopsCompleted, label: 'Loops' },
-                { icon: <Zap size={16} className="text-emerald-400" />, value: totalCorrect, label: 'Correctas', valueClass: 'text-emerald-400' },
-                { icon: <Target size={16} className="text-red-400" />, value: `${totalErrors}/20`, label: 'Errores', valueClass: 'text-red-400' },
-              ].map(({ icon, value, label, valueClass }) => (
-                <div key={label} className="flex flex-col items-center gap-1 p-3 bg-surface-container-high rounded-xl">
-                  {icon}
-                  <span className={cn('text-xl font-black', valueClass)}>{value}</span>
-                  <span className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</span>
-                </div>
-              ))}
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { icon: <Timer size={18} className="text-primary" />, value: timeDisplay, label: 'Supervivencia' },
+            { icon: <InfinityIcon size={18} className="text-primary" />, value: loopsCompleted, label: 'Loops' },
+            { icon: <Zap size={18} className="text-emerald-400" />, value: totalCorrect, label: 'Aciertos', valueClass: 'text-emerald-400' },
+            { icon: <Target size={18} className="text-red-400" />, value: `${totalErrors}/20`, label: 'Errores', valueClass: 'text-red-400' },
+          ].map(({ icon, value, label, valueClass }) => (
+            <motion.div 
+              key={label} 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-1.5 p-4 bg-surface-container/80 backdrop-blur-sm rounded-2xl border border-border/50"
+            >
+              <div className="p-2 rounded-lg bg-background/50">{icon}</div>
+              <span className={cn('text-2xl font-black tracking-tight', valueClass)}>{value}</span>
+              <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{label}</span>
+            </motion.div>
+          ))}
+        </div>
 
-            {/* Accuracy bar */}
-            <div className="p-3 bg-surface-container-high rounded-xl space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Precisión</span>
-                <span className="text-xl font-black text-primary">{accuracy}%</span>
-              </div>
-              <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${accuracy}%` }}
-                  transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
-                  className="h-full bg-primary rounded-full"
-                />
-              </div>
+        {/* Accuracy Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-5 bg-surface-container/80 backdrop-blur-sm rounded-3xl border border-border/50 space-y-3"
+        >
+          <div className="flex justify-between items-end">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Efectividad</span>
+              <h3 className="text-3xl font-black text-primary leading-none">{accuracy}%</h3>
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-[10px] font-bold text-muted-foreground pb-1">
+              {accuracy > 90 ? '¡LEGENDARIO!' : accuracy > 75 ? 'Excelente' : 'Buen trabajo'}
+            </div>
+          </div>
+          <div className="h-3 bg-background/50 rounded-full overflow-hidden p-0.5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${accuracy}%` }}
+              transition={{ duration: 1.2, ease: 'circOut' }}
+              className="h-full bg-primary rounded-full relative"
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            </motion.div>
+          </div>
+        </motion.div>
 
         {/* Actions */}
-        <div className="flex gap-3">
-          <Button onClick={onExit} variant="outline" className="flex-1 h-12 font-bold">
-            <ArrowLeft className="mr-2" size={16} /> Menú
+        <div className="flex gap-4 pt-2">
+          <Button onClick={onExit} variant="outline" className="flex-1 h-14 rounded-2xl font-bold border-2 hover:bg-surface-container transition-all">
+            <ArrowLeft className="mr-2" size={18} /> Salir
           </Button>
-          <Button onClick={onRestart} className="flex-1 h-12 font-black">
-            <RefreshCw className="mr-2" size={16} /> Repetir
+          <Button onClick={onRestart} className="flex-1 h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+            <RefreshCw className="mr-2" size={18} /> Reintentar
           </Button>
         </div>
       </motion.div>
@@ -607,13 +669,21 @@ function InfiniteResults({
 function HowToPlay({ 
   onStart, 
   onExit,
-  disableEffects,
-  onToggleEffects
+  disableEffects, 
+  onDisableEffectsChange,
+  musicEnabled,
+  onMusicEnabledChange,
+  sfxEnabled,
+  onSfxEnabledChange
 }: { 
-  onStart: () => void; 
+  onStart: () => void;
   onExit: () => void;
-  disableEffects: boolean;
-  onToggleEffects: (val: boolean) => void;
+  disableEffects: boolean; 
+  onDisableEffectsChange: (v: boolean) => void;
+  musicEnabled: boolean;
+  onMusicEnabledChange: (v: boolean) => void;
+  sfxEnabled: boolean;
+  onSfxEnabledChange: (v: boolean) => void;
 }) {
   const rules = [
     {
@@ -670,10 +740,15 @@ function HowToPlay({
         initial={{ scale: 0.9, opacity: 0, y: 24 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 240, damping: 24 }}
-        className="w-full max-w-sm space-y-5 relative z-10 max-h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-10"
+        className="w-full max-w-sm space-y-6 relative z-10 max-h-full overflow-y-auto overflow-x-hidden no-scrollbar pb-10"
       >
+        <div className="absolute -top-4 -right-4 z-20 scale-90">
+          <GlobalSettings />
+        </div>
+        
         {/* Header */}
-        <div className="text-center space-y-1">
+        <div className="relative text-center space-y-1 py-4">
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border bg-primary/10 border-primary/20 text-primary mb-2">
             ♾️ Modo Infinito
           </div>
@@ -732,17 +807,58 @@ function HowToPlay({
           </div>
         </div>
 
-        {/* Settings */}
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container border border-border">
-          <div className="space-y-0.5">
-            <Label htmlFor="disable-effects" className="text-sm font-bold">Modo Bajo Rendimiento</Label>
-            <p className="text-[10px] text-muted-foreground leading-tight">Desactiva fondos animados para mayor fluidez</p>
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-surface-container/50 border border-border/50 hover:bg-surface-container transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Zap size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor="disable-effects" className="text-sm font-bold">Modo Bajo Rendimiento</Label>
+                <p className="text-[11px] text-muted-foreground leading-tight">Desactiva fondos animados para mayor fluidez</p>
+              </div>
+            </div>
+            <Switch 
+              id="disable-effects" 
+              checked={disableEffects} 
+              onCheckedChange={onDisableEffectsChange}
+              className="data-[state=checked]:bg-primary"
+            />
           </div>
-          <Switch 
-            id="disable-effects" 
-            checked={disableEffects}
-            onCheckedChange={onToggleEffects}
-          />
+
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-surface-container/50 border border-border/50 hover:bg-surface-container transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Music size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold">Música</Label>
+                <p className="text-[11px] text-muted-foreground leading-tight">Música de fondo para el modo infinito</p>
+              </div>
+            </div>
+            <Switch 
+              checked={musicEnabled} 
+              onCheckedChange={onMusicEnabledChange}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-surface-container/50 border border-border/50 hover:bg-surface-container transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Volume2 size={20} />
+              </div>
+              <div className="space-y-0.5">
+                <Label className="text-sm font-bold">Sonidos</Label>
+                <p className="text-[11px] text-muted-foreground leading-tight">Efectos de acierto y error</p>
+              </div>
+            </div>
+            <Switch 
+              checked={sfxEnabled} 
+              onCheckedChange={onSfxEnabledChange}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
         </div>
 
         {/* Actions */}

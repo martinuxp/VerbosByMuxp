@@ -26,6 +26,7 @@ import {
 } from './ui/alert-dialog';
 import Confetti from 'react-confetti';
 import Balatro from './Balatro';
+import { useSettings } from '@/hooks/use-settings';
 
 type VersusQuizProps = {
   roomCode: string;
@@ -34,6 +35,7 @@ type VersusQuizProps = {
 };
 
 export function VersusQuiz({ roomCode, playerId, onExit }: VersusQuizProps) {
+  const { disableEffects } = useSettings();
   const [match, setMatch] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -282,32 +284,34 @@ export function VersusQuiz({ roomCode, playerId, onExit }: VersusQuizProps) {
 
   return (
     <div className="flex flex-col h-screen relative overflow-hidden text-on-surface bg-background">
-      <motion.div
-        className="absolute inset-0 pointer-events-none z-0"
-        initial={{ opacity: 0, rotate: 0 }}
-        animate={{
-          opacity: isFinished ? 0 : 0.4,
-          rotate: currentIndex * 90
-        }}
-        transition={{
-          opacity: { duration: 3, ease: "easeInOut" },
-          rotate: { duration: 1.2, ease: "easeInOut" }
-        }}
-      >
-        <div style={{ width: '150vw', height: '150vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
-          <Balatro
-            spinRotation={-2}
-            spinSpeed={7}
-            color1="#8080c0"
-            color2="#0080c0"
-            color3="#162325"
-            contrast={3.5}
-            lighting={0.4}
-            spinAmount={0.25}
-            pixelFilter={1200}
-          />
-        </div>
-      </motion.div>
+      {!disableEffects && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0"
+          initial={{ opacity: 0, rotate: 0 }}
+          animate={{
+            opacity: isFinished ? 0 : 0.4,
+            rotate: currentIndex * 90
+          }}
+          transition={{
+            opacity: { duration: 3, ease: "easeInOut" },
+            rotate: { duration: 1.2, ease: "easeInOut" }
+          }}
+        >
+          <div style={{ width: '150vw', height: '150vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
+            <Balatro
+              spinRotation={-2}
+              spinSpeed={7}
+              color1="#8080c0"
+              color2="#0080c0"
+              color3="#162325"
+              contrast={3.5}
+              lighting={0.4}
+              spinAmount={0.25}
+              pixelFilter={1200}
+            />
+          </div>
+        </motion.div>
+      )}
 
       {isCountdown ? (
         <div className="relative z-10 flex flex-col h-screen items-center justify-center">

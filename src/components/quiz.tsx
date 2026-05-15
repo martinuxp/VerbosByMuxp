@@ -32,6 +32,7 @@ import './ui/Dock.css';
 import { submitScore } from '@/services/ranking';
 import { useToast } from '@/hooks/use-toast';
 import LightRays from '@/components/LightRays';
+import { useSettings } from '@/hooks/use-settings';
 
 type UserAnswers = Record<string, Partial<Record<VerbForm, string>>>;
 type Results = Record<string, Partial<Record<VerbForm, boolean>>>;
@@ -53,6 +54,7 @@ export function Quiz({ config, onReset }: { config: QuizConfig; onReset: () => v
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const { disableEffects } = useSettings();
 
   useEffect(() => {
     const fadeOut = playSoloBackgroundMusic();
@@ -237,28 +239,30 @@ function ChallengeMode({ config, answers, onInputChange, onCheckAnswers }: { con
 
   return (
     <div className="flex flex-col flex-grow relative">
-      <motion.div
-        className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
-        initial={{ opacity: 0.6 }}
-        animate={bgControls}
-      >
-        <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
-          <LightRays
-            raysOrigin="top-center"
-            raysColor="#007fff"
-            raysSpeed={0.9}
-            lightSpread={1}
-            rayLength={1.6}
-            pulsating={false}
-            fadeDistance={1}
-            saturation={1}
-            followMouse
-            mouseInfluence={0.1}
-            noiseAmount={0}
-            distortion={0.15}
-          />
-        </div>
-      </motion.div>
+      {!disableEffects && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
+          initial={{ opacity: 0.6 }}
+          animate={bgControls}
+        >
+          <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+            <LightRays
+              raysOrigin="top-center"
+              raysColor="#007fff"
+              raysSpeed={0.9}
+              lightSpread={1}
+              rayLength={1.6}
+              pulsating={false}
+              fadeDistance={1}
+              saturation={1}
+              followMouse
+              mouseInfluence={0.1}
+              noiseAmount={0}
+              distortion={0.15}
+            />
+          </div>
+        </motion.div>
+      )}
 
       <div className='p-4 space-y-2 relative z-10'>
         <Progress value={progress} className="h-2" />

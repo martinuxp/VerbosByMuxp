@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Dices, Settings2, Search, ListChecks, HelpCircle, Infinity as InfinityIcon } from 'lucide-react';
 import { verbs, type Verb } from '@/lib/verbs';
 import { verbLists, type VerbList } from '@/lib/verb-lists';
@@ -24,6 +24,8 @@ export function InfiniteConfigurator({ onStart }: { onStart: (verbs: Verb[]) => 
   const [searchTerm, setSearchTerm] = useState('');
   const [isRandomSelection, setIsRandomSelection] = useState(false);
   const [activeList, setActiveList] = useState<string | null>(null);
+  const [activeListData, setActiveListData] = useState<VerbList | null>(null);
+  const [listTypeFilter, setListTypeFilter] = useState<'all' | 'regular' | 'irregular'>('all');
 
   const displayVerbs = useMemo(() => {
     let filtered = verbs;
@@ -69,16 +71,34 @@ export function InfiniteConfigurator({ onStart }: { onStart: (verbs: Verb[]) => 
     }
   };
 
+  const applyListWithFilter = useCallback((list: VerbList, typeFilter: 'all' | 'regular' | 'irregular') => {
+    const verbSet = new Set(list.verbs);
+    const filtered = verbs
+      .filter(v => verbSet.has(v.infinitive))
+      .filter(v => typeFilter === 'all' || v.type === typeFilter);
+    setSelectedVerbs(new Set(filtered.map(v => v.infinitive)));
+  }, []);
+
   const handleSelectList = (list: VerbList) => {
     playSelectSound();
     if (activeList === list.name) {
       setSelectedVerbs(new Set());
       setActiveList(null);
+      setActiveListData(null);
+      setListTypeFilter('all');
     } else {
-      setSelectedVerbs(new Set(list.verbs));
       setActiveList(list.name);
+      setActiveListData(list);
       setIsRandomSelection(false);
+      setListTypeFilter('all');
+      applyListWithFilter(list, 'all');
     }
+  };
+
+  const handleListTypeFilter = (type: 'all' | 'regular' | 'irregular') => {
+    playSelectSound();
+    setListTypeFilter(type);
+    if (activeListData) applyListWithFilter(activeListData, type);
   };
 
   const handleCategoryChange = (value: string) => {
@@ -87,6 +107,8 @@ export function InfiniteConfigurator({ onStart }: { onStart: (verbs: Verb[]) => 
     setSelectedVerbs(new Set());
     setIsRandomSelection(false);
     setActiveList(null);
+    setActiveListData(null);
+    setListTypeFilter('all');
   };
 
   const handleStart = () => {
@@ -134,6 +156,32 @@ export function InfiniteConfigurator({ onStart }: { onStart: (verbs: Verb[]) => 
               </button>
             ))}
           </div>
+
+          {/* List type filter — only shown when a premade list is active */}
+          {activeList && activeList !== 'random' && (
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs text-muted-foreground font-semibold shrink-0">Tipo:</span>
+              {([
+                { value: 'all', label: 'Ambos' },
+                { value: 'regular', label: 'Regulares' },
+                { value: 'irregular', label: 'Irregulares' },
+              ] as const).map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleListTypeFilter(value)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs font-bold border transition-all',
+                    listTypeFilter === value
+                      ? 'bg-primary text-primary-foreground border-transparent shadow'
+                      : 'bg-surface-container border-border hover:bg-accent'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+              <span className="text-xs text-muted-foreground ml-auto">{selectedVerbs.size} verbos</span>
+            </div>
+          )}
         </div>
 
         <Separator />
