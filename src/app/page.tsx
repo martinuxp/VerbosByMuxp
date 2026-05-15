@@ -2,19 +2,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Trophy, Gamepad2, Swords, Zap } from 'lucide-react';
+import { Sparkles, Trophy, Gamepad2, Swords, Zap, Infinity as InfinityIcon } from 'lucide-react';
 import { QuizConfigurator, type QuizConfig } from '@/components/quiz-configurator';
 import { Quiz } from '@/components/quiz';
 import { Leaderboard } from '@/components/leaderboard';
 import { VersusLobby } from '@/components/versus-lobby';
 import { VersusQuiz } from '@/components/versus-quiz';
+import { InfiniteConfigurator } from '@/components/infinite-configurator';
+import { InfiniteQuiz } from '@/components/infinite-quiz';
 import { Card } from '@/components/ui/card';
 import { AnimatePresence, motion } from 'framer-motion';
 import { QuizCountdown } from '@/components/quiz-countdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Balatro from '@/components/Balatro';
 import LightRays from '@/components/LightRays';
+import { type Verb } from '@/lib/verbs';
 import packageJson from '../../package.json';
+import ShapeGrid from '@/components/shape-grid';
 
 // ========== CONFIGURACIÓN DE COLORES (HEX) ==========
 // Cambia libremente estos códigos HEX. El sistema los convertirá automáticamente.
@@ -23,6 +27,9 @@ const THEME_NORMAL_DARK = '#80bfff'; // Shadcn Blue dark
 
 const THEME_VERSUS = '#800040';      // <--- Cambia el color principal del MODO DUELO aquí
 const THEME_VERSUS_DARK = '#cc0066'; // Color para el modo oscuro del duelo
+
+const THEME_INFINITE = '#dc143c';    // Carmesí para el Modo Infinito
+const THEME_INFINITE_DARK = '#ff4d6d';
 // ====================================================
 
 // Convierte códigos HEX para que sean compatibles con el formato HSL de Shadcn sin romper la opacidad
@@ -53,12 +60,13 @@ function hexToHslString(hex: string) {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-type QuizState = 'configuring' | 'countingDown' | 'active' | 'versus-lobby' | 'versus-active';
+type QuizState = 'configuring' | 'countingDown' | 'active' | 'versus-lobby' | 'versus-active' | 'infinite-active';
 
 export default function Home() {
   const [quizConfig, setQuizConfig] = useState<QuizConfig | null>(null);
   const [quizState, setQuizState] = useState<QuizState>('configuring');
   const [versusMatch, setVersusMatch] = useState<{ roomCode: string, playerId: string } | null>(null);
+  const [infiniteVerbs, setInfiniteVerbs] = useState<Verb[]>([]);
   const [activeTab, setActiveTab] = useState('play');
 
   const handleQuizStart = (config: QuizConfig) => {
@@ -79,6 +87,11 @@ export default function Home() {
   const handleVersusStart = (roomCode: string, playerId: string) => {
     setVersusMatch({ roomCode, playerId });
     setQuizState('versus-active');
+  };
+
+  const handleInfiniteStart = (verbs: Verb[]) => {
+    setInfiniteVerbs(verbs);
+    setQuizState('infinite-active');
   };
 
   const renderContent = () => {
@@ -107,6 +120,12 @@ export default function Home() {
             )}
           </motion.div>
         );
+      case 'infinite-active':
+        return (
+          <motion.div key="infinite-quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <InfiniteQuiz verbs={infiniteVerbs} onExit={handleReset} />
+          </motion.div>
+        );
       case 'configuring':
       default:
         let tabInfo = {
@@ -117,7 +136,15 @@ export default function Home() {
           description: "¡Aprende tus verbos de una forma divertida! Elige tu lista, activa el cronómetro y ahora sube al podio."
         };
 
-        if (activeTab === 'versus') {
+        if (activeTab === 'infinite') {
+          tabInfo = {
+            badge: "¿Cuánto tiempo puedes aguantar?",
+            badgeIcon: <InfinityIcon size={14} />,
+            title: "Infinito",
+            titleIcon: <InfinityIcon className="w-12 h-12" />,
+            description: "Los verbos rotan sin fin. Acierta para ganar tiempo, falla y lo perderás. ¿Sobrevivirás?"
+          };
+        } else if (activeTab === 'versus') {
           tabInfo = {
             badge: "¿Te sientes seguro de tu nivel?",
             badgeIcon: <Swords size={14} />,
@@ -154,6 +181,24 @@ export default function Home() {
                   lighting={0.4}
                   spinAmount={0.25}
                   pixelFilter={1200}
+                />
+              </div>
+            </motion.div>
+            <motion.div
+              className="absolute inset-0 pointer-events-none z-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: activeTab === 'infinite' ? 0.4 : 0 }}
+              transition={{ duration: 1, ease: 'easeInOut' }}
+            >
+              <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+                <ShapeGrid 
+                  shape="triangle"
+                  direction="diagonal"
+                  speed={0.4}
+                  squareSize={50}
+                  borderColor="rgba(255, 255, 255, 0.08)"
+                  hoverFillColor="rgba(255, 255, 255, 0.03)"
+                  hoverTrailAmount={4}
                 />
               </div>
             </motion.div>
@@ -206,21 +251,30 @@ export default function Home() {
               </header>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto h-14 p-1 bg-surface-container rounded-xl shadow-lg">
+                <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto h-14 p-1 bg-surface-container rounded-xl shadow-lg">
                   <TabsTrigger value="play" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
-                    <Gamepad2 className="mr-2" size={18} /> Jugar
+                    <Gamepad2 className="mr-2 hidden sm:block" size={18} /> Jugar
+                  </TabsTrigger>
+                  <TabsTrigger value="infinite" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
+                    <InfinityIcon className="mr-2 hidden sm:block" size={18} /> Infinito
                   </TabsTrigger>
                   <TabsTrigger value="versus" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
-                    <Swords className="mr-2" size={18} /> DUELO
+                    <Swords className="mr-2 hidden sm:block" size={18} /> DUELO
                   </TabsTrigger>
                   <TabsTrigger value="ranking" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">
-                    <Trophy className="mr-2" size={18} /> Rank
+                    <Trophy className="mr-2 hidden sm:block" size={18} /> Rank
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="play" className="mt-8">
                   <Card className="w-full shadow-2xl bg-surface-container-low overflow-hidden border-0">
                     <QuizConfigurator onStartQuiz={handleQuizStart} />
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="infinite" className="mt-8">
+                  <Card className="w-full shadow-2xl bg-surface-container-low overflow-hidden border-0">
+                    <InfiniteConfigurator onStart={handleInfiniteStart} />
                   </Card>
                 </TabsContent>
 
@@ -250,9 +304,10 @@ export default function Home() {
   }
 
   const isVersus = activeTab === 'versus' || quizState === 'versus-lobby' || quizState === 'versus-active';
+  const isInfinite = activeTab === 'infinite' || quizState === 'infinite-active';
 
-  const primaryLight = isVersus ? hexToHslString(THEME_VERSUS) : hexToHslString(THEME_NORMAL);
-  const primaryDark = isVersus ? hexToHslString(THEME_VERSUS_DARK) : hexToHslString(THEME_NORMAL_DARK);
+  const primaryLight = isVersus ? hexToHslString(THEME_VERSUS) : isInfinite ? hexToHslString(THEME_INFINITE) : hexToHslString(THEME_NORMAL);
+  const primaryDark = isVersus ? hexToHslString(THEME_VERSUS_DARK) : isInfinite ? hexToHslString(THEME_INFINITE_DARK) : hexToHslString(THEME_NORMAL_DARK);
 
   return (
     <>
