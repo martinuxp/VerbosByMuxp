@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Check, Timer, Zap, Trophy, Infinity as InfinityIcon, Play, HelpCircle, Volume2, Music, Settings, ZapOff } from 'lucide-react';
+import { ArrowLeft, Check, Timer, Zap, Trophy, Infinity as InfinityIcon, Play, HelpCircle, Volume2, Music, Settings, ZapOff, Target, RefreshCw } from 'lucide-react';
 import { useAudioSettings } from '@/hooks/use-audio-settings';
 import { useSettings } from '@/hooks/use-settings';
 import { 
@@ -53,6 +53,12 @@ const FORM_LABELS: Record<VerbForm, string> = {
   pastParticiple: 'Pasado Participio',
 };
 
+const FORM_COLORS: Record<VerbForm, string> = {
+  infinitive: 'text-sky-600 dark:text-sky-400 bg-sky-500/15 border-sky-500/30',
+  pastSimple: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
+  pastParticiple: 'text-fuchsia-600 dark:text-fuchsia-400 bg-fuchsia-500/15 border-fuchsia-500/30',
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -69,7 +75,13 @@ type DeathCause = 'time' | 'errors';
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => void }) {
-  const [verbPool, setVerbPool] = useState<Verb[]>(() => shuffle(verbs));
+  // Use a ref to initialize the shuffled list of verbs once so state and ref are synced on mount
+  const initialPoolRef = useRef<Verb[] | null>(null);
+  if (!initialPoolRef.current) {
+    initialPoolRef.current = shuffle(verbs);
+  }
+
+  const [verbPool, setVerbPool] = useState<Verb[]>(initialPoolRef.current);
   const [verbIndex, setVerbIndex] = useState(0);
   const [formIndex, setFormIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
@@ -96,7 +108,7 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
   const startTimeRef = useRef(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
   // Keep a ref to latest verbPool/verbIndex/formIndex for use in callbacks
-  const stateRef = useRef({ verbPool: shuffle(verbs), verbIndex: 0, formIndex: 0, loop: 1 });
+  const stateRef = useRef({ verbPool: initialPoolRef.current, verbIndex: 0, formIndex: 0, loop: 1 });
 
   const [terminalMounted, setTerminalMounted] = useState(false);
 
@@ -127,13 +139,29 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
           bgMusicCleanupRef.current = undefined;
         }
       }
-    } else {
+    }
+    
+    return () => {
       if (bgMusicCleanupRef.current) {
         bgMusicCleanupRef.current();
         bgMusicCleanupRef.current = undefined;
       }
-    }
+    };
   }, [gamePhase, loop, musicEnabled]);
+
+  // Prevent Alt key from hijacking focus/triggering browser menus during gameplay
+  useEffect(() => {
+    if (gamePhase !== 'playing') return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [gamePhase]);
 
   // Countdown Phase
   useEffect(() => {
@@ -156,7 +184,7 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
     if (gamePhase === 'playing') {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [stateRef.current.verbIndex, stateRef.current.formIndex, gamePhase]);
+  }, [verbIndex, formIndex, gamePhase]);
 
   // Timer tick (100ms for smooth animation)
   useEffect(() => {
@@ -466,51 +494,58 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
 
           {/* ── Verb card ───────────────────────────────────────────────────── */}
           <main className="flex-grow flex items-center justify-center p-4 relative z-10">
-            <AnimatePresence mode="wait">
+            <div className="w-full max-w-md">
               <motion.div
-                key={`${verbIndex}-${formIndex}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.15 }}
-                className="w-full max-w-md"
+                animate={
+                  feedback === 'correct'
+                    ? { boxShadow: '0 0 50px rgba(16,185,129,0.45)', scale: [1, 1.02, 1] }
+                    : feedback === 'wrong'
+                    ? { boxShadow: '0 0 50px rgba(239,68,68,0.45)', x: [-6, 6, -6, 6, 0] }
+                    : { boxShadow: '0 20px 60px rgba(0,0,0,0.2)', x: 0, scale: 1 }
+                }
+                transition={{ duration: 0.35 }}
+                className={cn(
+                  'rounded-2xl border-2 transition-colors duration-300 bg-surface-container-low shadow-2xl',
+                  feedback === 'correct' ? 'border-emerald-500' :
+                  feedback === 'wrong'   ? 'border-red-500' :
+                                          'border-transparent'
+                )}
               >
-                <motion.div
-                  animate={
-                    feedback === 'correct'
-                      ? { boxShadow: '0 0 50px rgba(16,185,129,0.45)', scale: [1, 1.02, 1] }
-                      : feedback === 'wrong'
-                      ? { boxShadow: '0 0 50px rgba(239,68,68,0.45)', x: [-6, 6, -6, 6, 0] }
-                      : { boxShadow: '0 20px 60px rgba(0,0,0,0.2)', x: 0, scale: 1 }
-                  }
-                  transition={{ duration: 0.35 }}
-                  className={cn(
-                    'rounded-2xl border-2 transition-colors duration-300 bg-surface-container-low shadow-2xl',
-                    feedback === 'correct' ? 'border-emerald-500' :
-                    feedback === 'wrong'   ? 'border-red-500' :
-                                            'border-transparent'
-                  )}
-                >
-                  <div className="p-8 space-y-6">
-                    {/* Progress & form label */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {verbIndex + 1} / {verbPool.length}
-                      </span>
-                      <span className="text-xs font-black uppercase tracking-widest text-primary">
-                        {FORM_LABELS[currentForm]}
-                      </span>
-                    </div>
+                <div className="p-8 space-y-6">
+                  {/* Top Row: Progress & Verb Type */}
+                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <span>{verbIndex + 1} / {verbPool.length}</span>
+                    <span>{currentVerb.type === 'irregular' ? '⚡ Irregular' : '📘 Regular'}</span>
+                  </div>
 
-                    {/* Translation hint */}
-                    <div className="text-center">
-                      <p className="text-4xl font-headline font-black capitalize text-primary leading-tight">
-                        {currentVerb.translation}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-widest">
-                        {currentVerb.type === 'irregular' ? '⚡ Irregular' : '📘 Regular'}
-                      </p>
-                    </div>
+                  {/* Centered required form badge & Translation Hint with AnimatePresence */}
+                  <div className="min-h-[110px] flex flex-col justify-center relative">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={`${verbIndex}-${formIndex}`}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-4 flex flex-col items-center justify-center w-full"
+                      >
+                        {/* Centered required form badge */}
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-4 py-2 border font-black uppercase tracking-widest text-xs rounded-full shadow-inner transition-colors duration-300",
+                          FORM_COLORS[currentForm]
+                        )}>
+                          🎯 {FORM_LABELS[currentForm]}
+                        </span>
+
+                        {/* Translation hint */}
+                        <div className="text-center">
+                          <p className="text-4xl font-headline font-black capitalize text-primary leading-tight">
+                            {currentVerb.translation}
+                          </p>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
 
                     {/* Answer input */}
                     <div className="space-y-1">
@@ -543,12 +578,11 @@ export function InfiniteQuiz({ verbs, onExit }: { verbs: Verb[]; onExit: () => v
                       <div className="flex flex-col items-center">
                         <span className="text-red-400 font-black text-xl">{totalErrors}</span>
                         <span className="text-[9px] uppercase tracking-widest text-muted-foreground">Errores</span>
-                      </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </motion.div>
-            </AnimatePresence>
+            </div>
           </main>
         </>
       )}

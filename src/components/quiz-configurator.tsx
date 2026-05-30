@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Dices, BookOpenCheck, Settings2, Search, ListChecks, HelpCircle } from 'lucide-react';
+import { Dices, BookOpenCheck, Settings2, Search, ListChecks, HelpCircle, Share2, Check } from 'lucide-react';
 import { verbs, type Verb } from '@/lib/verbs';
 import { verbLists, type VerbList } from '@/lib/verb-lists';
 import { Button } from '@/components/ui/button';
@@ -27,14 +27,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { playSelectSound, playStartSound, playChallengeModeSound, playReviewModeSound, playConfirmSound } from '@/lib/sounds';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 
 export type VerbForm = 'infinitive' | 'pastSimple' | 'pastParticiple';
@@ -59,10 +54,28 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
   const [listTypeFilter, setListTypeFilter] = useState<'all' | 'regular' | 'irregular'>('all');
   const [quizMode, setQuizMode] = useState<QuizMode>('challenge');
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [copiedList, setCopiedList] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const hasSeen = localStorage.getItem('solo_htp_seen');
     if (!hasSeen) setShowHowToPlay(true);
+    
+    // Check for shared list in URL
+    const params = new URLSearchParams(window.location.search);
+    const sharedListName = params.get('list');
+    if (sharedListName) {
+      const list = verbLists.find(l => l.name === sharedListName);
+      if (list) {
+        setActiveList(list.name);
+        setActiveListData(list);
+        setIsRandomSelection(false);
+        setListTypeFilter('all');
+        const verbSet = new Set(list.verbs);
+        const filtered = verbs.filter(v => verbSet.has(v.infinitive));
+        setSelectedVerbs(new Set(filtered.map(v => v.infinitive)));
+      }
+    }
   }, []);
 
   const handleCloseHowToPlay = () => {
@@ -167,6 +180,19 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
     playSelectSound();
     setListTypeFilter(type);
     if (activeListData) applyListWithFilter(activeListData, type);
+  };
+  
+  const handleShareList = (e: React.MouseEvent, listName: string) => {
+    e.stopPropagation();
+    const url = new URL(window.location.href);
+    url.searchParams.set('list', listName);
+    navigator.clipboard.writeText(url.toString());
+    setCopiedList(listName);
+    toast({
+      title: '¡Enlace copiado!',
+      description: `El enlace para la lista "${listName}" ha sido copiado al portapapeles.`,
+    });
+    setTimeout(() => setCopiedList(null), 2000);
   };
   
   const handleCategoryChange = (value: string) => {
@@ -362,19 +388,40 @@ export function QuizConfigurator({ onStartQuiz }: { onStartQuiz: (config: QuizCo
             <h3 className="font-semibold flex items-center gap-2"><ListChecks size={18}/> Prehechos</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {verbLists.map((list) => (
-                <button
-                  key={list.name}
-                  onClick={() => handleSelectList(list)}
-                  className={cn(
-                    "p-3 text-left rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transform hover:scale-105 active:scale-100",
-                    activeList === list.name
-                      ? "bg-primary text-primary-foreground border-transparent shadow-lg"
-                      : "bg-surface-container hover:bg-accent"
-                  )}
-                >
-                  <p className="font-bold text-sm">{list.name}</p>
-                  <p className={cn("text-xs", activeList === list.name ? 'text-primary-foreground/90' : 'text-muted-foreground')}>{list.description}</p>
-                </button>
+                <div key={list.name} className="relative group flex">
+                  <button
+                    onClick={() => handleSelectList(list)}
+                    className={cn(
+                      "p-3 text-left rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transform hover:scale-105 active:scale-100 flex-grow pr-10",
+                      activeList === list.name
+                        ? "bg-primary text-primary-foreground border-transparent shadow-lg"
+                        : "bg-surface-container hover:bg-accent"
+                    )}
+                  >
+                    <p className="font-bold text-sm">{list.name}</p>
+                    <p className={cn("text-xs", activeList === list.name ? 'text-primary-foreground/90' : 'text-muted-foreground')}>{list.description}</p>
+                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "absolute top-1/2 -translate-y-1/2 right-2 h-8 w-8 rounded-full transition-all",
+                          activeList === list.name 
+                            ? "text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground opacity-100" 
+                            : "opacity-0 group-hover:opacity-100 bg-surface-container/80 hover:bg-accent"
+                        )}
+                        onClick={(e) => handleShareList(e, list.name)}
+                      >
+                        {copiedList === list.name ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copiar enlace para compartir</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               ))}
             </div>
 

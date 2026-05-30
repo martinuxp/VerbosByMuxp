@@ -289,7 +289,7 @@ export function VersusQuiz({ roomCode, playerId, onExit }: VersusQuizProps) {
           className="absolute inset-0 pointer-events-none z-0"
           initial={{ opacity: 0, rotate: 0 }}
           animate={{
-            opacity: isFinished ? 0 : 0.4,
+            opacity: isFinished ? 0 : 0.8,
             rotate: currentIndex * 90
           }}
           transition={{
@@ -297,7 +297,7 @@ export function VersusQuiz({ roomCode, playerId, onExit }: VersusQuizProps) {
             rotate: { duration: 1.2, ease: "easeInOut" }
           }}
         >
-          <div style={{ width: '150vw', height: '150vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
+          <div style={{ width: '200vw', height: '200vh', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) scale(1.5)' }}>
             <Balatro
               spinRotation={-2}
               spinSpeed={7}

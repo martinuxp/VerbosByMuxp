@@ -84,5 +84,17 @@ export const verbLists: VerbList[] = [
       "join", "learn", "like", "listen", "live", "look", "love", "manage", "mention",
       "move", "need", "notice", "offer", "open", "organize", "paint", "plan", "prepare", "promise", "protect"
     ]
+  },
+  {
+    name: "Quiz 4 | 2°K | Irr 1-20 Reg 61-80",
+    description: "40 verbos (20 regulares + 20 irregulares) para el Quiz 1 de 2°K.",
+    verbs: [
+      // Regulars
+      "realize", "receive", "recommend", "reduce", "relax", "remember", "repeat", "reply", "return",
+      "save", "search", "seem", "share", "show", "start", "study", "talk", "travel", "try", "use",
+      // Irregulars
+      'be', 'become', 'begin', 'break', 'bring', 'build', 'buy', 'catch', 'choose', 'come',
+      'cut', 'do', 'draw', 'drink', 'drive', 'eat', 'fall', 'feel', 'find', 'fly'
+    ]
   }
 ];
