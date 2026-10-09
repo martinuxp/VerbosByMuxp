@@ -1,4 +1,3 @@
-
 export type VerbList = {
   name: string;
   description: string;
@@ -86,15 +85,15 @@ export const verbLists: VerbList[] = [
     ]
   },
   {
-    name: "Quiz 4 | 2°K | Irr 1-20 Reg 61-80",
-    description: "40 verbos (20 regulares + 20 irregulares) para el Quiz 1 de 2°K.",
+    name: "Quiz 4 | 2°K | Irr 61-77 Reg 61-80",
+    description: "37 verbos (20 regulares + 17 irregulares) para el Quiz 4 de 2°K.",
     verbs: [
-      // Regulars
+      // Regulares 61-80
       "realize", "receive", "recommend", "reduce", "relax", "remember", "repeat", "reply", "return",
       "save", "search", "seem", "share", "show", "start", "study", "talk", "travel", "try", "use",
-      // Irregulars
-      'be', 'become', 'begin', 'break', 'bring', 'build', 'buy', 'catch', 'choose', 'come',
-      'cut', 'do', 'draw', 'drink', 'drive', 'eat', 'fall', 'feel', 'find', 'fly'
+      // Irregulares 61-77
+      "wake", "wear", "win", "write", "bite", "blow", "dig", "fight", "freeze", "lead",
+      "mean", "rise", "shake", "shoot", "steal", "stick", "strike"
     ]
   }
 ];
